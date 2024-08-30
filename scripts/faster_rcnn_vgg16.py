@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torchvision
 from torchvision.ops import RoIPool
+from region_proposal_network import RegionProposalNetwork
 
 def decom_vgg16():
     # Import vgg16 model
@@ -21,6 +22,34 @@ def decom_vgg16():
             p.requires_grad = False
     
     return nn.Sequential(*features), classifier
+
+class FasterRCNNVGG16(FasterRCNN):
+    feat_stride = 16
+
+    def __init__(self,
+                 n_fg_class = 20,
+                 ratios = [0.5, 1, 2],
+                 anchor_scales = [8, 16, 32]):
+        
+        # extractor: Simple feature extractors part of convolutional layers
+        extractor, classifier = decom_vgg16()
+
+        rpn = RegionProposalNetwork(
+            512, 512,
+            ratios = ratios, 
+            anchor_scales = anchor_scales,
+            feat_stride = self.feat_stride
+        )
+
+        head = VGG16ROIHead(
+            n_class = n_fg_class + 1,
+            roi_size=7,
+            spatial_scale =  (1. / self.feat_stride),
+            classifier = classifier
+        )
+
+
+
 
 class VGG16ROIHead(nn.Module):
     # This will ingest the output of ROI generation layer which generates the region proposals
