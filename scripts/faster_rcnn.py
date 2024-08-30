@@ -17,6 +17,10 @@ class FasterRCNN(nn.Module):
         self.use_preset('evaluate')
         # Define your model architecture here
     
+    @property
+    def n_classes(self):
+        return self.head.n_class
+    
     def use_preset(self, preset):
         # pass
         if preset == 'visualize':
@@ -28,12 +32,9 @@ class FasterRCNN(nn.Module):
 
 
     def forward(self, x):
-        # Simple forward pass which will take data forward
         img_size = x.shape[2:]
         h = self.extractor(x)
-        rpn_locs, rpn_scores, rois, roi_indices, anchor = self.rpn(h, img_size)
-        roi_cls_locs, roi_scores = self.head(h, rois, roi_indices)
-        return roi_cls_locs, roi_scores, rois, roi_indices
+        
     
     def train(self, mode=True):
         pass
